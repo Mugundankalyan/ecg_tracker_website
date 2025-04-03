@@ -45,66 +45,68 @@ def fetch_latest_ecg():
         print(f"Error fetching ECG data: {e}")
         return None
 
-def normalize_ecg(ecg_signal):
-    if ecg_signal is None:
-        return None
+def calculate_vitals(ecg_signal, sampling_rate=250):
+    if ecg_signal is None or len(ecg_signal) < 2:
+        return None, None, None
 
-    ecg_min = np.min(ecg_signal)
-    ecg_max = np.max(ecg_signal)
-    if ecg_max != ecg_min:
-        ecg_signal = 2 * ((ecg_signal - ecg_min) / (ecg_max - ecg_min)) - 1
-    else:
-        ecg_signal = np.zeros_like(ecg_signal)
+    peaks, _ = nk.ecg_peaks(ecg_signal, sampling_rate=sampling_rate)
+    r_peaks = np.where(peaks['ECG_R_Peaks'] == 1)[0]
 
-    return ecg_signal
+    if len(r_peaks) < 2:
+        return None, None, None
+
+    rr_intervals = np.diff(r_peaks) / sampling_rate
+    bpm = 60 / np.mean(rr_intervals) if len(rr_intervals) > 0 else None
+    sbp = 0.4 * bpm + 90 if bpm else None
+    dbp = 0.2 * bpm + 60 if bpm else None
     
-def preprocess_ecg(ecg_signal):
-    if ecg_signal is None:
-        return None
-
-    ecg_signal = normalize_ecg(ecg_signal)
-
-    target_length = 100
-    if len(ecg_signal) < target_length:
-        ecg_signal = np.pad(ecg_signal, (0, target_length - len(ecg_signal)), 'constant')
-    else:
-        ecg_signal = ecg_signal[:target_length]
-
-    ecg_signal = np.expand_dims(ecg_signal, axis=-1)
-    ecg_signal = np.expand_dims(ecg_signal, axis=0) 
-
-    return ecg_signal
+    return bpm, sbp, dbp
 
 def classify_ecg(ecg_signal):
     if ecg_signal is None or model is None:
-        return "No ECG data or model available"
+        return "No ECG data or model available", "No suggestions available"
 
     ecg_signal = preprocess_ecg(ecg_signal)
     prediction = model.predict(ecg_signal)
-    predicted_class = np.argmax(prediction) 
+    predicted_class = np.argmax(prediction)
 
     arrhythmia_classes = ["Normal", "PVC", "APC", "LBBB", "RBBB"]
+    suggestions = [
+        "Heart rhythm appears normal. Maintain a healthy lifestyle.",
+        "Possible Premature Ventricular Contraction (PVC). Avoid caffeine and manage stress.",
+        "Possible Atrial Premature Complex (APC). Regular check-ups recommended.",
+        "Possible Left Bundle Branch Block (LBBB). Consult a cardiologist.",
+        "Possible Right Bundle Branch Block (RBBB). Monitor symptoms and consult a specialist."
+    ]
+    
     predicted_label = arrhythmia_classes[predicted_class] if predicted_class < len(arrhythmia_classes) else "Unknown"
-
-    return predicted_label
+    suggestion = suggestions[predicted_class] if predicted_class < len(suggestions) else "Consult a doctor for further evaluation."
+    
+    return predicted_label, suggestion
 
 @app.route("/")
 def index():
     ecg_signal = fetch_latest_ecg()
-    classification = classify_ecg(ecg_signal)
-    return render_template("index.html", classification=classification)
+    classification, suggestion = classify_ecg(ecg_signal)
+    bpm, sbp, dbp = calculate_vitals(ecg_signal)
+    return render_template("index.html", classification=classification, suggestion=suggestion, heart_rate=bpm, sbp=sbp, dbp=dbp)
 
 @app.route("/fetch_ecg", methods=["GET"])
 def get_ecg():
     ecg_signal = fetch_latest_ecg()
-    classification = classify_ecg(ecg_signal)
+    classification, suggestion = classify_ecg(ecg_signal)
+    bpm, sbp, dbp = calculate_vitals(ecg_signal)
 
     if ecg_signal is None:
         return jsonify({"error": "No ECG data found"}), 404
 
     return jsonify({
         "ecg_signal": ecg_signal.tolist(),
-        "arrhythmia_class": classification
+        "arrhythmia_class": classification,
+        "suggestion": suggestion,
+        "heart_rate": bpm,
+        "sbp": sbp,
+        "dbp": dbp
     })
 
 @app.route("/ecg_plot", methods=["GET"])
