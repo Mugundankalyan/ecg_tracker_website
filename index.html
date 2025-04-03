@@ -54,22 +54,23 @@
             margin-bottom: 20px;
         }
 
-        #prediction {
+        #prediction, #heartRate, #sbp, #dbp {
             font-size: 1.2em;
-            color: #27ae60;
             font-weight: 500;
             padding: 10px;
-            background-color: #ecf8f2;
             border-radius: 5px;
-            border: 1px solid #27ae60;
             text-align: center;
         }
 
-        #timestamp {
-            font-size: 0.9em;
-            color: #777;
-            text-align: center;
-            margin-bottom: 20px;
+        #prediction {
+            color: #27ae60;
+            background-color: #ecf8f2;
+            border: 1px solid #27ae60;
+        }
+
+        #heartRate, #sbp, #dbp {
+            background-color: #f4f4f9;
+            border: 1px solid #bdc3c7;
         }
 
         button {
@@ -123,7 +124,10 @@
                     document.getElementById("ecg-input").value = data.ecg_signal.join(",");
                     document.getElementById("ecg-plot").src = "/ecg_plot?" + new Date().getTime();
                     document.getElementById("prediction").innerText = "Predicted Arrhythmia: " + data.arrhythmia_class;
-                    document.getElementById("timestamp").innerText = "Last Updated: " + new Date(parseInt(data.timestamp)).toLocaleString();
+                    document.getElementById("suggestion").innerText = "Suggestion: " + data.suggestion;
+                    document.getElementById("heartRate").innerText = "Heart Rate: " + data.heart_rate + " BPM";
+                    document.getElementById("sbp").innerText = "Systolic BP: " + data.sbp + " mmHg";
+                    document.getElementById("dbp").innerText = "Diastolic BP: " + data.dbp + " mmHg";
                 } else {
                     alert("No ECG data available.");
                 }
@@ -154,10 +158,15 @@
         <h3>Real-Time ECG Signal:</h3>
         <img id="ecg-plot" src="" alt="ECG Plot">
 
-        <p id="timestamp">Last Updated: N/A</p>
-
         <h3>Prediction Output:</h3>
         <p id="prediction">Waiting for prediction...</p>
+        <h3>Suggestions for the predicted condition:</h3>
+        <p id="suggestion">Suggestion: Loading...</p>
+
+        <h3>Vital Signs</h3>
+        <p id="heartRate">Heart Rate: Loading...</p>
+        <p id="sbp">Systolic BP: Loading...</p>
+        <p id="dbp">Diastolic BP: Loading...</p>
 
         <button onclick="fetchECGData()">Refresh ECG</button>
     </div>
