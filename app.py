@@ -15,9 +15,9 @@ CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins
 
 # Initialize Firebase
 try:
-    cred = credentials.Certificate(os.getenv("FIREBASE_CREDENTIALS_PATH", "rt-ecg-12-firebase-adminsdk-fbsvc-009271066f.json"))
+    cred = credentials.Certificate(os.getenv("FIREBASE_CREDENTIALS_PATH", "PATH TO JSON FILE"))
     firebase_admin.initialize_app(cred, {
-        "databaseURL": "https://rt-ecg-12-default-rtdb.asia-southeast1.firebasedatabase.app"
+        "databaseURL": "databaseURL"
     })
     print("✅ Firebase initialized successfully")
 except Exception as e:
