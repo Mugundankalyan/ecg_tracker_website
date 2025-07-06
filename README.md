@@ -13,7 +13,7 @@ A web application for tracking, analyzing, and visualizing ECG (Electrocardiogra
 ## Tech Stack
 
 - **Frontend:** HTML, CSS
-- **Backend:** Python (Flask or Django recommended)
+- **Backend:** Python (Flask)
 - **Data Storage:** (Firebase)
 
 ## Getting Started
